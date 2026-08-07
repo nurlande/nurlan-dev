@@ -1,42 +1,44 @@
-import { ThemeProvider, CssBaseline, Container, Box } from "@mui/material";
+import { ThemeProvider, CssBaseline, Box } from "@mui/material";
 import { useState, useEffect, Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { getTheme } from "./theme";
 import Navbar from "./components/Navbar";
-import About from "./components/About";
 import LoadingSpinner from "./components/LoadingSpinner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AnimatedBackground from "./components/AnimatedBackground";
 import { initGA, trackPageView } from "./utils/analytics";
 
-// Lazy load components for code splitting
-const Projects = lazy(() => import("./components/Projects"));
-const Experience = lazy(() => import("./components/Experience"));
-const Skills = lazy(() => import("./components/Skills"));
-const Contact = lazy(() => import("./components/Contact"));
-const Footer = lazy(() => import("./components/Footer"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const LabPage = lazy(() => import("./pages/LabPage"));
+const MiniProjectPage = lazy(() => import("./pages/MiniProjectPage"));
 
-function App() {
-  // Load theme preference from localStorage or default to dark
+function AnalyticsListener() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+
+  return null;
+}
+
+function AppShell() {
   const [mode, setMode] = useState<"light" | "dark">(() => {
     const savedMode = localStorage.getItem("themeMode");
-    return (savedMode === "light" || savedMode === "dark" ? savedMode : "dark") as "light" | "dark";
+    return (savedMode === "light" || savedMode === "dark" ? savedMode : "dark") as
+      | "light"
+      | "dark";
   });
 
   useEffect(() => {
-    // Save theme preference to localStorage whenever it changes
     localStorage.setItem("themeMode", mode);
   }, [mode]);
 
-  // Initialize analytics
   useEffect(() => {
-    // Initialize Google Analytics if measurement ID is provided
     const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
     if (gaId) {
       initGA(gaId);
     }
-
-    // Track initial page view
-    trackPageView(window.location.pathname);
   }, []);
 
   const toggleMode = () => {
@@ -57,24 +59,26 @@ function App() {
           <AnimatedBackground mode={mode} />
           <Box sx={{ position: "relative", zIndex: 1 }}>
             <Navbar mode={mode} toggleMode={toggleMode} />
-            <About />
-            <Container>
-              <Suspense fallback={<LoadingSpinner message="Loading projects..." />}>
-                <ErrorBoundary>
-                  <Projects />
-                  <Experience />
-                  <Skills />
-                  <Contact />
-                </ErrorBoundary>
-              </Suspense>
-            </Container>
-            <Suspense fallback={null}>
-              <Footer />
+            <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/lab" element={<LabPage />} />
+                <Route path="/lab/:projectId" element={<MiniProjectPage />} />
+              </Routes>
             </Suspense>
           </Box>
         </Box>
+        <AnalyticsListener />
       </ErrorBoundary>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   );
 }
 
