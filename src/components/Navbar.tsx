@@ -320,7 +320,7 @@ export default function Navbar({ mode, toggleMode }: NavbarProps) {
 
           <Box
             sx={{
-              display: { xs: "none", sm: "flex" },
+              display: { xs: "none", md: "flex" },
               alignItems: "center",
               gap: 1,
             }}
@@ -360,7 +360,7 @@ export default function Navbar({ mode, toggleMode }: NavbarProps) {
             aria-expanded={mobileOpen}
             edge="end"
             onClick={handleDrawerToggle}
-            sx={{ display: { sm: "none" } }}
+            sx={{ display: { md: "none" } }}
           >
             <MenuIcon />
           </IconButton>
@@ -373,7 +373,7 @@ export default function Navbar({ mode, toggleMode }: NavbarProps) {
         onClose={handleDrawerToggle}
         aria-label="Navigation menu"
         sx={{
-          display: { xs: "block", sm: "none" },
+          display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: 280,

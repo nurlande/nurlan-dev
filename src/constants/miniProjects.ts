@@ -14,6 +14,30 @@ export interface MiniProject {
  */
 export const miniProjects: MiniProject[] = [
   {
+    id: "echo-drawer",
+    title: "Echo Drawer",
+    description:
+      "Draw a stroke and it replays itself — delayed, mirrored, slowed down, or glitched.",
+    technologies: ["React", "TypeScript", "Canvas"],
+    status: "draft",
+  },
+  {
+    id: "orbit-clock",
+    title: "Orbit Clock",
+    description:
+      "Time as a tiny solar system — hours, minutes, and seconds orbit a sun that follows the day.",
+    technologies: ["React", "TypeScript", "SVG"],
+    status: "draft",
+  },
+  {
+    id: "window-pet",
+    title: "Window Pet",
+    description:
+      "A tiny creature that lives on the bottom edge of your window — pet it, feed it, throw it.",
+    technologies: ["React", "TypeScript", "SVG", "requestAnimationFrame"],
+    status: "draft",
+  },
+  {
     id: "emoji-view",
     title: "Emoji View",
     description:
