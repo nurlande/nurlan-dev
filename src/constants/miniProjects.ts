@@ -14,6 +14,14 @@ export interface MiniProject {
  */
 export const miniProjects: MiniProject[] = [
   {
+    id: "pane-manager",
+    title: "Pane Manager",
+    description:
+      "Several sites side by side in one tab — tiled layouts, per-pane addresses, remembered between visits.",
+    technologies: ["React", "TypeScript", "iframes", "Layout trees"],
+    status: "draft",
+  },
+  {
     id: "echo-drawer",
     title: "Echo Drawer",
     description:

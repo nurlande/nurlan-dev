@@ -8,6 +8,7 @@ export const miniProjectRegistry: Record<
   string,
   () => Promise<{ default: ComponentType }>
 > = {
+  "pane-manager": () => import("./projects/pane-manager"),
   "echo-drawer": () => import("./projects/EchoDrawer"),
   "orbit-clock": () => import("./projects/OrbitClock"),
   "window-pet": () => import("./projects/WindowPet"),
