@@ -1,67 +1,47 @@
-import { LAYOUT_PRESET_IDS } from "./layoutTree";
-import type { LayoutNode, Workspace } from "./types";
+import type { WorkspaceCollection } from "./collection";
+import type { Workspace } from "./types";
+import { isRecord, isWorkspace } from "./validation";
 
-const STORAGE_KEY = "pane-manager:workspace:v1";
+const STORAGE_KEY = "pane-manager:workspaces:v2";
+const LEGACY_STORAGE_KEY = "pane-manager:workspace:v1";
+const MAX_STORED_WORKSPACES = 100;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isLayoutNode(value: unknown, paneIds: Set<string>): value is LayoutNode {
-  if (!isRecord(value)) return false;
-
-  if (value.type === "pane") {
-    return typeof value.paneId === "string" && paneIds.has(value.paneId);
-  }
-
-  return (
-    value.type === "split" &&
-    (value.direction === "row" || value.direction === "column") &&
-    typeof value.ratio === "number" &&
-    value.ratio > 0 &&
-    value.ratio < 1 &&
-    isLayoutNode(value.first, paneIds) &&
-    isLayoutNode(value.second, paneIds)
-  );
-}
-
-function isWorkspace(value: unknown): value is Workspace {
-  if (!isRecord(value) || !isRecord(value.panes) || !Array.isArray(value.paneOrder)) {
-    return false;
-  }
-
-  const panes = value.panes;
-  const paneIds = new Set(value.paneOrder.filter((id): id is string => typeof id === "string"));
-  const panesValid = [...paneIds].every((id) => {
-    const pane = panes[id];
-    return isRecord(pane) && pane.id === id && typeof pane.url === "string";
-  });
-
-  return (
-    typeof value.id === "string" &&
-    typeof value.name === "string" &&
-    (value.presetId === null || LAYOUT_PRESET_IDS.includes(value.presetId as never)) &&
-    paneIds.size === value.paneOrder.length &&
-    panesValid &&
-    isLayoutNode(value.layout, paneIds)
-  );
-}
-
-export function loadWorkspace(): Workspace | null {
+function readJson(key: string): unknown {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const data: unknown = JSON.parse(raw);
-    return isWorkspace(data) ? data : null;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-export function saveWorkspace(workspace: Workspace) {
+/** Keeps every valid workspace, so one corrupted entry doesn't wipe the rest. */
+export function loadCollection(): WorkspaceCollection | null {
+  const data = readJson(STORAGE_KEY);
+  if (isRecord(data) && Array.isArray(data.workspaces)) {
+    const workspaces = data.workspaces
+      .filter((workspace): workspace is Workspace => isWorkspace(workspace))
+      .slice(0, MAX_STORED_WORKSPACES);
+    if (workspaces.length > 0) {
+      const activeId = workspaces.some((workspace) => workspace.id === data.activeId)
+        ? (data.activeId as string)
+        : workspaces[0].id;
+      return { activeId, workspaces };
+    }
+  }
+
+  const legacy = readJson(LEGACY_STORAGE_KEY);
+  if (isWorkspace(legacy)) {
+    return { activeId: legacy.id, workspaces: [legacy] };
+  }
+  return null;
+}
+
+export function saveCollection(collection: WorkspaceCollection) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, ...collection }));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
-    // Storage can be full or disabled (private mode); the workspace still works in memory.
+    // Storage can be full or disabled (private mode); the workspaces still work in memory.
   }
 }

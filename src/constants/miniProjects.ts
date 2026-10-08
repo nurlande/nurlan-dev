@@ -17,7 +17,7 @@ export const miniProjects: MiniProject[] = [
     id: "pane-manager",
     title: "Pane Manager",
     description:
-      "Several sites side by side in one tab — tiled layouts, per-pane addresses, remembered between visits.",
+      "Several sites side by side in one tab — resizable tiled layouts, named workspaces, templates, and shareable links.",
     technologies: ["React", "TypeScript", "iframes", "Layout trees"],
     status: "draft",
   },

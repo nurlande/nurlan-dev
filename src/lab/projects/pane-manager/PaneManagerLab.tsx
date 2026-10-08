@@ -3,9 +3,29 @@ import { createPortal } from "react-dom";
 import { Alert, Box, Button, Typography } from "@mui/material";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import PaneManager from "./components/PaneManager";
+import { readShareToken, removeShareToken } from "./core/share";
 
 export default function PaneManagerLab() {
-  const [open, setOpen] = useState(false);
+  const [sharedToken, setSharedToken] = useState(() => readShareToken(window.location.hash));
+  const [open, setOpen] = useState(() => readShareToken(window.location.hash) !== null);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const token = readShareToken(window.location.hash);
+      if (token === null) return;
+      setSharedToken(token);
+      setOpen(true);
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const clearSharedToken = () => {
+    const { pathname, search, hash } = window.location;
+    // Keeps the router's history state intact.
+    window.history.replaceState(window.history.state, "", pathname + search + removeShareToken(hash));
+    setSharedToken(null);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -17,7 +37,7 @@ export default function PaneManagerLab() {
     appRoot?.setAttribute("inert", "");
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      if (e.key !== "Escape" || e.defaultPrevented) return;
       const active = document.activeElement;
       if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
       setOpen(false);
@@ -51,8 +71,9 @@ export default function PaneManagerLab() {
           Pane Manager
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 480, mx: "auto" }}>
-          Open up to four sites side by side in one browser tab. Pick a layout, type an
-          address into each pane, and everything is remembered for next time.
+          Open up to four sites side by side in one browser tab. Pick a layout, drag the gaps
+          to resize, drag a pane&apos;s grip to swap it. Keep several named workspaces, start
+          from templates, and share a layout as a link.
         </Typography>
 
         <Alert severity="info" sx={{ maxWidth: 520, mx: "auto", mb: 4, textAlign: "left" }}>
@@ -85,7 +106,11 @@ export default function PaneManagerLab() {
               bgcolor: "background.default",
             }}
           >
-            <PaneManager onExit={() => setOpen(false)} />
+            <PaneManager
+              onExit={() => setOpen(false)}
+              sharedToken={sharedToken}
+              onSharedTokenHandled={clearSharedToken}
+            />
           </Box>,
           document.body
         )}

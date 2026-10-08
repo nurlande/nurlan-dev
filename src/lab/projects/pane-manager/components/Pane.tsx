@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type ReactNode } from "react";
+import { useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import {
   Box,
   Button,
@@ -14,12 +14,16 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CloseIcon from "@mui/icons-material/Close";
 import BlockIcon from "@mui/icons-material/Block";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import {
   EMBEDDABLE_SUGGESTIONS,
   getHostname,
   isKnownBlocked,
   normalizeUrl,
 } from "../core/embedPolicy";
+import { shortcutLabel } from "../core/shortcuts";
 import type { Pane as PaneData } from "../core/types";
 
 const IFRAME_SANDBOX = [
@@ -173,12 +177,28 @@ function BlockedNotice({ url }: { url: string }) {
 
 interface PaneProps {
   pane: PaneData;
+  active: boolean;
+  maximized: boolean;
   canClose: boolean;
+  /** Whether the pane can be maximized or dragged, i.e. it shares the screen. */
+  canArrange: boolean;
   onUrlChange: (url: string) => void;
   onClose: () => void;
+  onToggleMaximize: () => void;
+  onDragHandlePointerDown: (e: PointerEvent<HTMLElement>) => void;
 }
 
-export default function Pane({ pane, canClose, onUrlChange, onClose }: PaneProps) {
+export default function Pane({
+  pane,
+  active,
+  maximized,
+  canClose,
+  canArrange,
+  onUrlChange,
+  onClose,
+  onToggleMaximize,
+  onDragHandlePointerDown,
+}: PaneProps) {
   const [reloadCount, setReloadCount] = useState(0);
   const [loadedFrameKey, setLoadedFrameKey] = useState<string | null>(null);
 
@@ -196,8 +216,12 @@ export default function Pane({ pane, canClose, onUrlChange, onClose }: PaneProps
         borderRadius: 1.5,
         overflow: "hidden",
         border: "1px solid",
-        borderColor: "divider",
+        borderColor: active ? "primary.main" : "divider",
         bgcolor: "background.paper",
+        containerType: "inline-size",
+        "@container (max-width: 300px)": {
+          "& .pane-secondary-action": { display: "none" },
+        },
       }}
     >
       <Stack
@@ -206,9 +230,28 @@ export default function Pane({ pane, canClose, onUrlChange, onClose }: PaneProps
         alignItems="center"
         sx={{ px: 0.75, py: 0.5, borderBottom: "1px solid", borderColor: "divider" }}
       >
+        {canArrange && (
+          <Tooltip title="Drag onto another pane to swap them">
+            <Box
+              aria-hidden
+              onPointerDown={onDragHandlePointerDown}
+              sx={{
+                display: "flex",
+                alignSelf: "stretch",
+                alignItems: "center",
+                color: "text.secondary",
+                cursor: "grab",
+                touchAction: "none",
+                "&:hover": { color: "text.primary" },
+              }}
+            >
+              <DragIndicatorIcon fontSize="small" />
+            </Box>
+          </Tooltip>
+        )}
         <AddressBar key={url} url={url} onSubmit={onUrlChange} />
         <Tooltip title="Reload">
-          <span>
+          <span className="pane-secondary-action">
             <IconButton
               size="small"
               aria-label="Reload pane"
@@ -219,8 +262,23 @@ export default function Pane({ pane, canClose, onUrlChange, onClose }: PaneProps
             </IconButton>
           </span>
         </Tooltip>
+        {(canArrange || maximized) && (
+          <Tooltip title={maximized ? "Restore layout (Esc)" : `Maximize (${shortcutLabel("Enter")})`}>
+            <IconButton
+              size="small"
+              aria-label={maximized ? "Restore pane" : "Maximize pane"}
+              onClick={onToggleMaximize}
+            >
+              {maximized ? (
+                <FullscreenExitIcon fontSize="small" />
+              ) : (
+                <FullscreenIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
         <Tooltip title="Open in new window — use this if the page stays blank, some sites block embedding">
-          <span>
+          <span className="pane-secondary-action">
             <IconButton
               size="small"
               aria-label="Open pane in new window"

@@ -21,6 +21,11 @@ export interface SplitNode {
 
 export type LayoutNode = PaneNode | SplitNode;
 
+/** Route from the root to a node, e.g. `["second", "first"]`. */
+export type LayoutPath = ("first" | "second")[];
+
+export type NeighborDirection = "left" | "right" | "up" | "down";
+
 export type LayoutPresetId = "single" | "columns-2" | "rows-2" | "main-plus-2" | "grid-4";
 
 export interface Workspace {
@@ -40,4 +45,13 @@ export interface Rect {
   y: number;
   w: number;
   h: number;
+}
+
+/** Draggable boundary between the two children of a split. */
+export interface Divider {
+  path: LayoutPath;
+  direction: SplitDirection;
+  ratio: number;
+  /** Area covered by the whole split, not just the divider line. */
+  splitRect: Rect;
 }
